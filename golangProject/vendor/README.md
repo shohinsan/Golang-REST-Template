@@ -1,0 +1,1 @@
+Good documentation for the vendor/ folder can be found in this Gopher Academy post by Daniel Theophanes. For the purpose of this post, all the source code for 3rd party packages need to be vendored (or copied) into the vendor/ folder. This includes packages that will be used from the company Kit project. Consider packages from the Kit project as 3rd party packages.
