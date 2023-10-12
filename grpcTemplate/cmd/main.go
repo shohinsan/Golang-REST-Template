@@ -4,7 +4,8 @@ import (
 	"context"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
 	"google.golang.org/grpc"
-	pb "grpcTemplate/pkg" // Correct the import path
+	"google.golang.org/protobuf/encoding/protojson"
+	pb "grpcTemplate/pkg"
 	"log"
 	"net"
 	"net/http"
@@ -20,39 +21,53 @@ type myApiTwoServer struct {
 }
 
 func main() {
-	// REST cmd
-	go func() {
-		mux := runtime.NewServeMux()
+	go startGRPCServer()
+	startHTTPGateway()
+}
 
-		err1 := pb.RegisterMyFirstApiHandlerServer(context.Background(), mux, &myApiOneServer{})
-		if err1 != nil {
-			log.Fatalf("Failed to register MyFirstApiHandlerServer: %v", err1)
-		}
-
-		err2 := pb.RegisterMySecondApiHandlerServer(context.Background(), mux, &myApiTwoServer{})
-		if err2 != nil {
-			log.Fatalf("Failed to register MySecondApiHandlerServer: %v", err2)
-		}
-
-		prettierMux := http.NewServeMux()
-		prettierMux.Handle("/", prettierMiddleware(mux))
-
-		// Listen and serve on port 8081
-		log.Fatalln(http.ListenAndServe(":8081", prettierMux))
-	}()
-
-	// gRPC cmd
+func startGRPCServer() {
 	listener, err := net.Listen("tcp", "localhost:9090")
 	if err != nil {
 		log.Fatalf("Failed to listen: %v", err)
 	}
+
 	grpcServer := grpc.NewServer()
 	pb.RegisterMyFirstApiServer(grpcServer, &myApiOneServer{})
 	pb.RegisterMySecondApiServer(grpcServer, &myApiTwoServer{})
+
 	err = grpcServer.Serve(listener)
 	if err != nil {
-		log.Fatalf("gRPC cmd failed to start: %v", err)
+		log.Fatalf("gRPC server failed to start: %v", err)
 	}
+}
+
+func startHTTPGateway() {
+
+	jsonOption := runtime.WithMarshalerOption(runtime.MIMEWildcard, &runtime.JSONPb{
+		MarshalOptions: protojson.MarshalOptions{
+			UseProtoNames: true,
+		},
+		UnmarshalOptions: protojson.UnmarshalOptions{
+			DiscardUnknown: true,
+		},
+	})
+
+	mux := runtime.NewServeMux(jsonOption)
+
+	err1 := pb.RegisterMyFirstApiHandlerServer(context.Background(), mux, &myApiOneServer{})
+	if err1 != nil {
+		log.Fatalf("Failed to register MyFirstApiHandlerServer: %v", err1)
+	}
+
+	err2 := pb.RegisterMySecondApiHandlerServer(context.Background(), mux, &myApiTwoServer{})
+	if err2 != nil {
+		log.Fatalf("Failed to register MySecondApiHandlerServer: %v", err2)
+	}
+
+	prettierMux := http.NewServeMux()
+	prettierMux.Handle("/", prettierMiddleware(mux))
+
+	log.Fatal(http.ListenAndServe(":8081", prettierMux))
 }
 
 func prettierMiddleware(h http.Handler) http.Handler {
