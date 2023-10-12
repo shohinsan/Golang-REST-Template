@@ -1,0 +1,7 @@
+GET http://localhost:8081/api/data/echo/123
+Content-Type: application/json
+
+{
+  "msg1": "Hello world! Wrong",
+  "mgs": "Hello world! Correct"
+}

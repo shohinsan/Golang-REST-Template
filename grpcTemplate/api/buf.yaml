@@ -1,0 +1,11 @@
+version: v1
+name: buf.build/myorganization/protos
+deps:
+  - buf.build/bufbuild/protovalidate
+  - buf.build/googleapis/googleapis
+lint:
+  use:
+    - DEFAULT
+breaking:
+  use:
+    - FILE
