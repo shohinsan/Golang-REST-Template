@@ -2,30 +2,43 @@ package routes
 
 import (
 	"context"
-	"errors"
 	"google.golang.org/genproto/googleapis/api/httpbody"
 	"google.golang.org/protobuf/types/known/emptypb"
+	pb "grpcTemplate/pkg"
 )
 
-type MySecondApi struct {
+type MyApiTwoServer struct {
+	pb.UnimplementedMySecondApiServer
 }
 
-func (*MySecondApi) ThirdGetRpc(ctx context.Context, in *emptypb.Empty) (*httpbody.HttpBody, error) {
+func (*MyApiTwoServer) ThirdGetRpc(ctx context.Context, in *emptypb.Empty) (*httpbody.HttpBody, error) {
+	result := "This is a hardcoded response."
+	responseData := "Response: " + result
 
-	var _ string
-
-	if errors.Is(ctx.Err(), context.Canceled) {
-		_ = "Request canceled"
-	} else if errors.Is(ctx.Err(), context.DeadlineExceeded) {
-		_ = "Request timed out"
-	} else {
-		_ = "Received a request"
+	pretty := ctx.Value("pretty")
+	if pretty != nil {
+		responseData = "Pretty Response: " + result
 	}
 
 	response := &httpbody.HttpBody{
 		ContentType: "text/html",
-		Data:        []byte("Hello World"),
+		Data:        []byte(responseData),
+	}
+	return response, nil
+}
+
+func (*MyApiTwoServer) FourthGetRpc(ctx context.Context, in *emptypb.Empty) (*httpbody.HttpBody, error) {
+	result := "This is a hardcoded response."
+	responseData := "Response: " + result
+
+	pretty := ctx.Value("pretty")
+	if pretty != nil {
+		responseData = "Pretty Response: " + result
 	}
 
+	response := &httpbody.HttpBody{
+		ContentType: "text/html",
+		Data:        []byte(responseData),
+	}
 	return response, nil
 }
